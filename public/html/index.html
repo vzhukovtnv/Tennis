@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+<title>Tennis of EvolveU </title>
+<style>
+#container {
+	width: 1024px;
+	height: 768px;
+	position: relative;
+	background:lightgrey;
+}
+
+#ball {
+	width: 50px;
+	height: 50px;
+	position: absolute;
+}
+
+
+#shield {
+	width: 50px;
+	height: 5px;
+	position: absolute;
+	bottom: 0;
+	background:blue;
+}
+
+#status {
+	background:white;
+}
+
+</style>
+
+<head><Header></Header></head>
+
+<body>
+
+<h1>Table tennis - Save our planet</h1>
+<h2>
+	<div id="status2">Ready to save the planet?</div>
+</h2>
+
+<p><button onclick="startButtonClicked()">Start game</button></p> 
+<p><button onclick="playBackButtonClicked()">Play back </button></p> 
+
+<div id="container" >
+	<div id="ball"><img src="/images/bomb50.png"/></div>
+	<div id="shield"></div>
+</div>
+
+<script>
+	var shield	= document.getElementById("shield");
+	var ball	= document.getElementById("ball");
+	var status2	= document.getElementById("status2"); 
+	var timer	= null;
+	var buttonPres = "";
+	var playMode =true;
+
+
+	function startButtonClicked(){
+		//alert("Started")
+		buttonPres ="";
+		playMode = true;
+		nextScene('startGame')
+		setTimer();
+	}
+
+	function playBackButtonClicked(){
+		playMode = false;
+		nextScene('startPlayBackGame')
+		setTimer();
+	}
+	
+	function SetButtonsEventListener(){
+		document.addEventListener("keydown" , function(event) {		
+			let code= event.key;
+			if (code == "ArrowLeft" || code == "ArrowRight" ){
+				buttonPres = code
+			}
+		 })
+	}
+
+	function setTimer(){
+		timer = setInterval(frame,50);
+	}
+
+	function stopTimer(){
+		clearInterval(timer);
+	}
+
+	function frame(){
+		let subPath 
+		if (playMode){
+			subPath = 'makeNextScene/:'
+			if (buttonPres !==""){
+				subPath +=buttonPres;
+				buttonPres = "";
+			}
+		}else {
+			subPath = 'playBackGame'
+		}
+		nextScene(subPath)
+	}
+	
+
+	async function fetchServer(postFix)
+	{
+		let url='http://localhost:3000/api/games/tableTennis/' + postFix
+		//alert(url);
+		let responce = await fetch (url);
+		/*let responce = await fetch (url, {
+			method:"GET",
+			mode:'cors',
+			cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+    		credentials: 'same-origin', // include, *same-origin, omit
+    		headers: {
+      			'Content-Type': 'application/json'
+      			// 'Content-Type': 'application/x-www-form-urlencoded',
+    		},
+    		redirect: 'follow', // manual, *follow, error
+    		referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+    		body: JSON.stringify(data) // body data 
+		})*/
+		if (responce.ok){
+			let r =   responce.json()
+			/*let s='One: '
+			for (let key in r) {
+  				s += key +':'+  r[key]+', '// keys
+			}
+			//alert(s) 
+			//alert (typeof r)
+			//alert (r)*/
+			return  r; //await responce.json()
+		} else {
+			alert(`Error ${responce.status}` )
+			return null;
+		}
+	}
+
+
+	async function nextScene(postfFix){
+		let command  =  await fetchServer(postfFix);
+		
+		if (command == null) {return;}	
+		
+		/*let s='Two: '
+		for (let key in command) {
+  			s += key +':' //+command[key]+', '// keys
+		}
+		//alert(s)
+		*/
+		
+		ball.style.top = command.bombY + "px";
+		ball.style.left =command.bombX + "px";
+		shield.style.left = command.shieldX+"px";
+
+		if ( command.message==null || command.message=="") {return;}
+
+		//status2.html = command.message; // Don't work
+		//status2.innerHTML = command.message; //works
+		//status2.innerText = command.message; //works
+		status2.textContent = command.message; //works
+
+		if (command.message =="Game over"){
+			status2.textContent = command.message + " - Earth destroyed";
+			stopTimer()
+		}	
+	}
+
+	SetButtonsEventListener();
+</script>
+
+</body>
+
+</html>
